@@ -44,6 +44,7 @@
             label1.Size = new Size(87, 19);
             label1.TabIndex = 1;
             label1.Text = "default value";
+            label1.ForeColor = System.Drawing.Color.FromArgb(((int)(((byte)(123)))), ((int)(((byte)(84)))), ((int)(((byte)(195)))));
             // 
             // textBox1
             // 

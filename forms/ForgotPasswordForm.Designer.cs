@@ -44,8 +44,8 @@ namespace PasswordManager.Forms
             gradientPanel1.Controls.Add(pbCodewaveLogo);
             gradientPanel1.Controls.Add(lblWelcomeTo);
             gradientPanel1.Controls.Add(pbClouds);
-            gradientPanel1.gradientBottom = Color.FromArgb(33, 145, 245);
-            gradientPanel1.gradientTop = Color.FromArgb(9, 74, 158);
+            gradientPanel1.gradientBottom = Color.FromArgb(123, 84, 195);
+            gradientPanel1.gradientTop = Color.FromArgb(55, 20, 100);
             gradientPanel1.Location = new Point(0, 0);
             gradientPanel1.Name = "gradientPanel1";
             gradientPanel1.Size = new Size(400, 454);
@@ -147,14 +147,15 @@ namespace PasswordManager.Forms
             // 
             // btnSend
             // 
-            btnSend.BackColor = Color.FromArgb(33, 145, 245);
-            btnSend.BackgroundColor = Color.FromArgb(33, 145, 245);
+            btnSend.BackColor = Color.FromArgb(123, 84, 195);
+            btnSend.BackgroundColor = Color.FromArgb(123, 84, 195);
             btnSend.BorderColor = Color.PaleVioletRed;
             btnSend.BorderRadius = 20;
             btnSend.BorderSize = 0;
             btnSend.FlatAppearance.BorderSize = 0;
             btnSend.FlatStyle = FlatStyle.Flat;
             btnSend.ForeColor = Color.White;
+            btnSend.IconSize = 30;
             btnSend.Location = new Point(435, 260);
             btnSend.Name = "btnSend";
             btnSend.Size = new Size(274, 43);
@@ -169,7 +170,7 @@ namespace PasswordManager.Forms
             lblBackToLogin.AutoSize = true;
             lblBackToLogin.Cursor = Cursors.Hand;
             lblBackToLogin.Font = new Font("Segoe UI", 9F, FontStyle.Bold);
-            lblBackToLogin.ForeColor = Color.FromArgb(33, 145, 245);
+            lblBackToLogin.ForeColor = Color.FromArgb(123, 84, 195);
             lblBackToLogin.Location = new Point(500, 330);
             lblBackToLogin.Name = "lblBackToLogin";
             lblBackToLogin.Size = new Size(138, 20);

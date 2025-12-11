@@ -157,7 +157,7 @@ namespace PasswordManager.Forms
             lblForgotPassword.AutoSize = true;
             lblForgotPassword.BackColor = Color.Transparent;
             lblForgotPassword.Font = new Font("Segoe UI", 8F);
-            lblForgotPassword.ForeColor = Color.FromArgb(33, 45, 245);
+            lblForgotPassword.ForeColor = Color.FromArgb(123, 84, 195);
             lblForgotPassword.Location = new Point(605, 263);
             lblForgotPassword.Name = "lblForgotPassword";
             lblForgotPassword.Size = new Size(109, 19);
@@ -222,6 +222,7 @@ namespace PasswordManager.Forms
             rbLogin.FlatAppearance.BorderSize = 0;
             rbLogin.FlatStyle = FlatStyle.Flat;
             rbLogin.ForeColor = Color.White;
+            rbLogin.IconSize = 30;
             rbLogin.Location = new Point(435, 315);
             rbLogin.Name = "rbLogin";
             rbLogin.Size = new Size(274, 43);
@@ -278,7 +279,6 @@ namespace PasswordManager.Forms
 
         #endregion
 
-        // ... Ваші змінні ...
         private PictureBox pbClouds;
         private Label lblWelcomeTo;
         private GradientPanel gradientPanel1;

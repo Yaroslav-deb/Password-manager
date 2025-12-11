@@ -48,8 +48,8 @@ namespace PasswordManager.Forms
             gradientPanel1.Controls.Add(pbCodewaveLogo);
             gradientPanel1.Controls.Add(lblWelcomeTo);
             gradientPanel1.Controls.Add(pbClouds);
-            gradientPanel1.gradientBottom = Color.FromArgb(33, 145, 245);
-            gradientPanel1.gradientTop = Color.FromArgb(9, 74, 158);
+            gradientPanel1.gradientBottom = Color.FromArgb(123, 84, 195);
+            gradientPanel1.gradientTop = Color.FromArgb(55, 20, 100);
             gradientPanel1.Location = new Point(0, 0);
             gradientPanel1.Name = "gradientPanel1";
             gradientPanel1.Size = new Size(400, 454);
@@ -161,14 +161,15 @@ namespace PasswordManager.Forms
             // 
             // btnSave
             // 
-            btnSave.BackColor = Color.FromArgb(33, 145, 245);
-            btnSave.BackgroundColor = Color.FromArgb(33, 145, 245);
+            btnSave.BackColor = Color.FromArgb(123, 84, 195);
+            btnSave.BackgroundColor = Color.FromArgb(123, 84, 195);
             btnSave.BorderColor = Color.PaleVioletRed;
             btnSave.BorderRadius = 20;
             btnSave.BorderSize = 0;
             btnSave.FlatAppearance.BorderSize = 0;
             btnSave.FlatStyle = FlatStyle.Flat;
             btnSave.ForeColor = Color.White;
+            btnSave.IconSize = 30;
             btnSave.Location = new Point(435, 310);
             btnSave.Name = "btnSave";
             btnSave.Size = new Size(274, 43);

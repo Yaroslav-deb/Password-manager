@@ -1,7 +1,7 @@
 ﻿using PasswordManager.additionalClasses;
 using System;
 using System.Drawing;
-using System.Text.RegularExpressions; // Для перевірки пошти
+using System.Text.RegularExpressions;
 using System.Windows.Forms;
 
 namespace PasswordManager.Forms
@@ -14,19 +14,15 @@ namespace PasswordManager.Forms
             InitializeWindowLogic();
         }
 
-        // --- НАЛАШТУВАННЯ ВІКНА ---
         private void InitializeWindowLogic()
         {
-            // Закриття програми повністю при натисканні на хрестик
             pbClose.Click += (s, e) => Application.Exit();
             pbClose.Cursor = Cursors.Hand;
 
-            // Згортання вікна
             pbCollapse.Click += (s, e) => this.WindowState = FormWindowState.Minimized;
             pbCollapse.Cursor = Cursors.Hand;
         }
 
-        // --- ЛОГІКА ВІДНОВЛЕННЯ ---
         private async void btnSend_Click(object sender, EventArgs e)
         {
             string email = LTxtEmail.Text?.Trim();
@@ -43,19 +39,15 @@ namespace PasswordManager.Forms
                 return;
             }
 
-            // 1. Генеруємо код
             Random rnd = new Random();
             string code = rnd.Next(100000, 999999).ToString();
 
-            // 2. Блокуємо кнопку, щоб не натискали двічі
             btnSend.Enabled = false;
             btnSend.Text = "Відправка...";
-            this.Cursor = Cursors.WaitCursor; // Курсор "очікування"
+            this.Cursor = Cursors.WaitCursor;
 
-            // 3. Реальна відправка Email
             bool isSent = await EmailService.SendRecoveryCodeAsync(email, code);
 
-            // 4. Повертаємо інтерфейс назад
             this.Cursor = Cursors.Default;
             btnSend.Enabled = true;
             btnSend.Text = "Відправити";
@@ -64,7 +56,6 @@ namespace PasswordManager.Forms
             {
                 MessageBox.Show($"Код успішно відправлено на {email}", "Успіх", MessageBoxButtons.OK, MessageBoxIcon.Information);
 
-                // Перехід на форму введення коду
                 VerificationForm verifyForm = new VerificationForm(email, code);
                 verifyForm.FormClosed += (s, args) => Application.Exit();
                 this.Hide();
@@ -85,7 +76,6 @@ namespace PasswordManager.Forms
             }
         }
 
-        // --- НАВІГАЦІЯ ---
         private void lblBackToLogin_Click(object sender, EventArgs e)
         {
             GoBackToLogin();

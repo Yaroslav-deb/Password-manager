@@ -12,6 +12,8 @@ namespace PasswordManager.additionalClasses
         private int borderRadius = 20;
         private Color borderColor = Color.PaleVioletRed;
 
+        private int iconSize = 30;
+
         [Category("Codewave UI")]
         public int BorderSize
         {
@@ -47,53 +49,124 @@ namespace PasswordManager.additionalClasses
             set { this.ForeColor = value; }
         }
 
-        // Конструктор
+        [Category("Codewave UI")]
+        public int IconSize
+        {
+            get { return iconSize; }
+            set { iconSize = value; Invalidate(); }
+        }
+
         public RoundedButton()
         {
             this.FlatStyle = FlatStyle.Flat;
             this.FlatAppearance.BorderSize = 0;
-            this.Size = new Size(150, 40);
+            this.Size = new Size(150, 50);
             this.BackColor = Color.MediumSlateBlue;
             this.ForeColor = Color.White;
             this.Resize += (s, e) => { if (borderRadius > this.Height) borderRadius = this.Height; };
+
+            SetStyle(ControlStyles.ResizeRedraw |
+                     ControlStyles.UserPaint |
+                     ControlStyles.AllPaintingInWmPaint |
+                     ControlStyles.SupportsTransparentBackColor |
+                     ControlStyles.OptimizedDoubleBuffer, true);
+        }
+
+        private Color GetVisibleBackColor()
+        {
+            Control current = this.Parent;
+            while (current != null)
+            {
+                if (current.BackColor != Color.Transparent && current.BackColor.A == 255)
+                {
+                    return current.BackColor;
+                }
+                current = current.Parent;
+            }
+            return SystemColors.Control;
         }
 
         protected override void OnPaint(PaintEventArgs pevent)
         {
-            base.OnPaint(pevent);
+            Graphics graphics = pevent.Graphics;
+            graphics.SmoothingMode = SmoothingMode.AntiAlias;
 
             Rectangle rectSurface = this.ClientRectangle;
             Rectangle rectBorder = Rectangle.Inflate(rectSurface, -borderSize, -borderSize);
             int smoothSize = 2;
 
+            Color parentColor = GetVisibleBackColor();
+
             if (borderRadius > 2)
             {
                 using (GraphicsPath pathSurface = GetFigurePath(rectSurface, borderRadius))
                 using (GraphicsPath pathBorder = GetFigurePath(rectBorder, borderRadius - borderSize))
-                using (Pen penSurface = new Pen(this.Parent.BackColor, smoothSize))
+                using (Pen penSurface = new Pen(parentColor, smoothSize))
                 using (Pen penBorder = new Pen(borderColor, borderSize))
                 {
-                    pevent.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
+                    graphics.Clear(parentColor);
 
-                    this.Region = new Region(pathSurface);
-
-                    pevent.Graphics.DrawPath(penSurface, pathSurface);
+                    if (this.BackColor != Color.Transparent)
+                    {
+                        using (Brush brushBg = new SolidBrush(this.BackColor))
+                        {
+                            graphics.FillPath(brushBg, pathSurface);
+                        }
+                    }
 
                     if (borderSize >= 1)
-                        pevent.Graphics.DrawPath(penBorder, pathBorder);
+                        graphics.DrawPath(penBorder, pathBorder);
+
+                    graphics.DrawPath(penSurface, pathSurface);
                 }
             }
             else
             {
-                this.Region = new Region(rectSurface);
+                graphics.Clear(parentColor);
+
+                if (this.BackColor != Color.Transparent)
+                {
+                    using (Brush brushBg = new SolidBrush(this.BackColor))
+                    {
+                        graphics.FillRectangle(brushBg, rectSurface);
+                    }
+                }
+
                 if (borderSize >= 1)
                 {
                     using (Pen penBorder = new Pen(borderColor, borderSize))
                     {
-                        pevent.Graphics.SmoothingMode = SmoothingMode.None;
-                        pevent.Graphics.DrawRectangle(penBorder, 0, 0, this.Width - 1, this.Height - 1);
+                        graphics.DrawRectangle(penBorder, 0, 0, this.Width - 1, this.Height - 1);
                     }
                 }
+            }
+
+            DrawImageAndText(graphics);
+        }
+
+        private void DrawImageAndText(Graphics g)
+        {
+            int currentIconSize = this.IconSize;
+            int imgX = 15;
+
+            if (this.Padding.Left > 0) imgX = this.Padding.Left;
+
+            if (this.Image != null)
+            {
+                int imgY = (this.Height - currentIconSize) / 2;
+                g.DrawImage(this.Image, new Rectangle(imgX, imgY, currentIconSize, currentIconSize));
+            }
+
+            if (!string.IsNullOrEmpty(this.Text))
+            {
+                int textX = (this.Image != null) ? (imgX + currentIconSize + 10) : 10;
+
+                if (this.Padding.Left > textX) textX = this.Padding.Left + 5;
+
+                TextRenderer.DrawText(g, this.Text, this.Font,
+                    new Rectangle(textX, 0, this.Width - textX, this.Height),
+                    this.ForeColor,
+                    TextFormatFlags.VerticalCenter | TextFormatFlags.Left | TextFormatFlags.EndEllipsis);
             }
         }
 
@@ -113,7 +186,8 @@ namespace PasswordManager.additionalClasses
         protected override void OnHandleCreated(EventArgs e)
         {
             base.OnHandleCreated(e);
-            this.Parent.BackColorChanged += (s, args) => { if (this.DesignMode) Invalidate(); };
+            if (this.Parent != null)
+                this.Parent.BackColorChanged += (s, args) => { if (this.DesignMode) Invalidate(); };
         }
     }
 }

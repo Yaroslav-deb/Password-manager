@@ -9,7 +9,11 @@ namespace PasswordManager.personalizedTools
         public LoginTextBox()
         {
             InitializeComponent();
+            textBox1.TextChanged += (s, e) => TextChanged?.Invoke(this, e);
         }
+
+        [Browsable(true)]
+        public new event EventHandler TextChanged;
 
         private string _label;
         private bool _isPassword;
@@ -51,6 +55,5 @@ namespace PasswordManager.personalizedTools
                     textBox1.Text = value;
             }
         }
-
     }
 }

@@ -1,5 +1,5 @@
 ﻿using PasswordManager.additionalClasses;
-using PasswordManager.forms;
+using PasswordManager.Forms;
 using System;
 using System.Windows.Forms;
 

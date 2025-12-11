@@ -1,6 +1,6 @@
 using PasswordManager.additionalClasses;
 using PasswordManager.database;
-using PasswordManager.forms;
+using PasswordManager.Forms;
 using System;
 using System.Drawing;
 using System.IO;
@@ -113,7 +113,13 @@ namespace PasswordManager.Forms
 
             if (userId != -1)
             {
-                MessageBox.Show($"ID: {userId}", "Success", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show($"Â³òàºìî! Âàø ID: {userId}", "Óñï³õ", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                MainForm main = new MainForm(userId);
+
+                main.FormClosed += (s, args) => Application.Exit();
+                this.Hide();
+                main.Show();
             }
             else
             {

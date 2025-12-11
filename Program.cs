@@ -13,7 +13,7 @@ namespace PasswordManager
         {
             ApplicationConfiguration.Initialize();
             DatabaseHelper.InitializeDatabase();
-            Application.Run(new LoginForm());
+            Application.Run(new MainForm(1));
 
         }
     }

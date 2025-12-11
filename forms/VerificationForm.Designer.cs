@@ -43,8 +43,8 @@ namespace PasswordManager.Forms
             gradientPanel1.Controls.Add(lblPasswordManager);
             gradientPanel1.Controls.Add(lblWelcomeTo);
             gradientPanel1.Controls.Add(pbClouds);
-            gradientPanel1.gradientBottom = Color.FromArgb(33, 145, 245);
-            gradientPanel1.gradientTop = Color.FromArgb(9, 74, 158);
+            gradientPanel1.gradientBottom = Color.FromArgb(123, 84, 195);
+            gradientPanel1.gradientTop = Color.FromArgb(55, 20, 100);
             gradientPanel1.Location = new Point(0, 0);
             gradientPanel1.Name = "gradientPanel1";
             gradientPanel1.Size = new Size(400, 454);
@@ -145,14 +145,15 @@ namespace PasswordManager.Forms
             // 
             // btnVerify
             // 
-            btnVerify.BackColor = Color.FromArgb(33, 145, 245);
-            btnVerify.BackgroundColor = Color.FromArgb(33, 145, 245);
+            btnVerify.BackColor = Color.FromArgb(123, 84, 195);
+            btnVerify.BackgroundColor = Color.FromArgb(123, 84, 195);
             btnVerify.BorderColor = Color.PaleVioletRed;
             btnVerify.BorderRadius = 20;
             btnVerify.BorderSize = 0;
             btnVerify.FlatAppearance.BorderSize = 0;
             btnVerify.FlatStyle = FlatStyle.Flat;
             btnVerify.ForeColor = Color.White;
+            btnVerify.IconSize = 30;
             btnVerify.Location = new Point(435, 260);
             btnVerify.Name = "btnVerify";
             btnVerify.Size = new Size(274, 43);

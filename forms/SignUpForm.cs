@@ -117,12 +117,24 @@ namespace PasswordManager.Forms
                 return;
             }
 
+            // Спроба реєстрації
             bool isRegistered = DatabaseHelper.RegisterUser(username, email, pass1);
 
             if (isRegistered)
             {
-                MessageBox.Show("Реєстрація успішна! Тепер ви можете увійти.", "Успіх", MessageBoxButtons.OK, MessageBoxIcon.Information);
-                lblLogin_Click(sender, e);
+                int newUserId = DatabaseHelper.GetUserId(username);
+
+                if (newUserId != -1)
+                {
+                    MainForm mainForm = new MainForm(newUserId);
+                    mainForm.FormClosed += (s, args) => Application.Exit();
+                    this.Hide();
+                    mainForm.Show();
+                }
+                else
+                {
+                    lblLogin_Click(sender, e);
+                }
             }
         }
 
