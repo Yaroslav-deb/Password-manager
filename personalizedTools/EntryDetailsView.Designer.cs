@@ -324,6 +324,29 @@ namespace PasswordManager.personalizedTools
             pnlHistoryList.TabIndex = 3;
             pnlHistoryList.Visible = false;
             // 
+            // btnRestore (Кнопка відновлення - зелена або синя)
+            //
+            this.btnRestore = new PasswordManager.additionalClasses.RoundedButton();
+            this.btnRestore.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
+            this.btnRestore.BackColor = System.Drawing.Color.FromArgb(33, 145, 245); // Синій
+            this.btnRestore.BackgroundColor = System.Drawing.Color.FromArgb(33, 145, 245);
+            this.btnRestore.BorderColor = System.Drawing.Color.Transparent;
+            this.btnRestore.BorderRadius = 15;
+            this.btnRestore.BorderSize = 0;
+            this.btnRestore.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
+            this.btnRestore.Font = new System.Drawing.Font("Segoe UI", 10F);
+            this.btnRestore.ForeColor = System.Drawing.Color.White;
+            this.btnRestore.IconSize = 20;
+            this.btnRestore.Location = new System.Drawing.Point(420, 35); // Там же, де btnEdit
+            this.btnRestore.Name = "btnRestore";
+            this.btnRestore.Size = new System.Drawing.Size(170, 40);
+            this.btnRestore.TabIndex = 25;
+            this.btnRestore.Text = "   Відновити";
+            this.btnRestore.TextAlign = System.Drawing.ContentAlignment.MiddleLeft;
+            this.btnRestore.TextColor = System.Drawing.Color.White;
+            this.btnRestore.UseVisualStyleBackColor = false;
+            this.btnRestore.Visible = false;
+            // 
             // EntryDetailsView
             // 
             AutoScaleDimensions = new SizeF(8F, 20F);
@@ -346,6 +369,7 @@ namespace PasswordManager.personalizedTools
             Controls.Add(pbMainIcon);
             Controls.Add(btnEdit);
             Controls.Add(lblHeaderUser);
+            this.Controls.Add(this.btnRestore);
             Name = "EntryDetailsView";
             Size = new Size(620, 700);
             ((System.ComponentModel.ISupportInitialize)pbFavorite).EndInit();
@@ -390,5 +414,6 @@ namespace PasswordManager.personalizedTools
         private System.Windows.Forms.Label lblHistoryTitle;
         private System.Windows.Forms.Label lblHistoryDate;
         private System.Windows.Forms.Panel pnlHistoryList;
+        private PasswordManager.additionalClasses.RoundedButton btnRestore;
     }
 }

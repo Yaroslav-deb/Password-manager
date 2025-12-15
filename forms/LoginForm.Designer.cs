@@ -227,7 +227,7 @@ namespace PasswordManager.Forms
             rbLogin.Name = "rbLogin";
             rbLogin.Size = new Size(274, 43);
             rbLogin.TabIndex = 10;
-            rbLogin.Text = "Увійти";
+            rbLogin.Text = "                         Увійти";
             rbLogin.TextColor = Color.White;
             rbLogin.UseVisualStyleBackColor = false;
             rbLogin.Click += rbLogin_Click;

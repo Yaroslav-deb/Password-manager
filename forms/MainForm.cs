@@ -20,6 +20,9 @@ namespace PasswordManager.Forms
         private string currentCategoryFilter = "Всі";
         private int currentSortMode = 1;
         private PasswordListItem _currentSelectedItem = null;
+        private int _idToSelectAfterRefresh = -1;
+        private enum ViewMode { AllItems, Favorites, Trash, CategoryView }
+        private ViewMode currentViewMode = ViewMode.AllItems;
 
         private Image imgSearch, imgPlus;
         private Image imgArrowRight, imgArrowDown;
@@ -30,6 +33,7 @@ namespace PasswordManager.Forms
         {
             this.currentUserId = userId;
             InitializeComponent();
+
 
             this.DoubleBuffered = true;
             this.SetStyle(ControlStyles.ResizeRedraw, true);
@@ -93,7 +97,20 @@ namespace PasswordManager.Forms
             catch { }
         }
 
-        private void AssignIconToButton(RoundedButton btn, Image img) { if (img == null) return; btn.Image = img; btn.IconSize = 30; btn.Padding = new Padding(12, 0, 0, 0); }
+        private void AssignIconToButton(RoundedButton btn, Image img)
+        {
+            if (img == null) return;
+
+            btn.Image = img;
+            btn.IconSize = 30;
+
+            btn.TextImageRelation = TextImageRelation.ImageBeforeText;
+
+            btn.ImageAlign = ContentAlignment.MiddleLeft;
+            btn.TextAlign = ContentAlignment.MiddleLeft;
+
+            btn.Padding = new Padding(15, 0, 0, 0);
+        }
 
         private void InitializeTopBar()
         {
@@ -103,16 +120,12 @@ namespace PasswordManager.Forms
             btnAddItem.Click += (s, e) =>
             {
                 this.Hide();
-
                 AddItemForm addForm = new AddItemForm(currentUserId);
-
                 DialogResult result = addForm.ShowDialog();
-
                 if (result == DialogResult.OK)
                 {
                     LoadEntriesFromDb();
                 }
-
                 this.Show();
             };
             btnAddItem.BorderRadius = 20;
@@ -155,7 +168,7 @@ namespace PasswordManager.Forms
 
             dropdownSort.MainIcon = null;
             dropdownSort.SelectedText = "Нові (за датою)";
-            dropdownSort.AddItem("По імені (А-Я)");
+            dropdownSort.AddItem("По імені (A-Z)");
             dropdownSort.AddItem("Нові (за датою)");
             dropdownSort.AddItem("Старі (за датою)");
 
@@ -175,16 +188,46 @@ namespace PasswordManager.Forms
         {
             flpPasswordList.SuspendLayout();
             flpPasswordList.Controls.Clear();
-
             _currentSelectedItem = null;
 
-            IEnumerable<PasswordEntry> result = allEntries;
 
-            if (currentCategoryFilter != "Всі") result = result.Where(x => x.Category == currentCategoryFilter);
+            IEnumerable<PasswordEntry> result;
+
+            if (currentViewMode == ViewMode.Trash)
+            {
+                result = DatabaseHelper.GetTrashEntries(currentUserId);
+            }
+            else
+            {
+                result = allEntries;
+            }
+
+            switch (currentViewMode)
+            {
+                case ViewMode.Favorites:
+                    result = result.Where(x => x.Favorite);
+                    if (currentCategoryFilter != "Всі") result = result.Where(x => x.Category == currentCategoryFilter);
+                    break;
+
+                case ViewMode.CategoryView:
+                    result = result.Where(x => x.Category == currentCategoryFilter);
+                    break;
+
+                case ViewMode.Trash:
+                    break;
+
+                case ViewMode.AllItems:
+                default:
+                    if (currentCategoryFilter != "Всі") result = result.Where(x => x.Category == currentCategoryFilter);
+                    break;
+            }
 
             string searchQuery = searchBar.SearchText?.ToLower();
             if (!string.IsNullOrEmpty(searchQuery))
-                result = result.Where(x => x.Title.ToLower().Contains(searchQuery) || (x.WebsiteUrl != null && x.WebsiteUrl.ToLower().Contains(searchQuery)));
+            {
+                result = result.Where(x => x.Title.ToLower().Contains(searchQuery) ||
+                                          (x.WebsiteUrl != null && x.WebsiteUrl.ToLower().Contains(searchQuery)));
+            }
 
             switch (currentSortMode)
             {
@@ -197,67 +240,82 @@ namespace PasswordManager.Forms
             {
                 var item = new PasswordListItem(entry);
                 item.TabStop = false;
+                int scrollBarWidth = SystemInformation.VerticalScrollBarWidth;
+                item.Width = flpPasswordList.ClientSize.Width - scrollBarWidth - 5;
 
-                item.ItemClick += (s, e) =>
+                if (_idToSelectAfterRefresh != -1 && entry.Id == _idToSelectAfterRefresh)
                 {
-                    if (_currentSelectedItem != null && _currentSelectedItem != item) _currentSelectedItem.IsSelected = false;
+                    item.IsSelected = true;
+                    _currentSelectedItem = item;
+                    ShowDetails(entry);
+
+                    _idToSelectAfterRefresh = -1;
+                }
+
+                item.ItemClick += (s, e) => {
+                    if (_currentSelectedItem != null && _currentSelectedItem != item)
+                        _currentSelectedItem.IsSelected = false;
+
                     item.IsSelected = true;
                     _currentSelectedItem = item;
                     ShowDetails(entry);
                 };
 
-                item.EditClick += (s, e) =>
+                if (currentViewMode != ViewMode.Trash)
                 {
-                    this.Hide();
-
-                    EditItemForm editForm = new EditItemForm(currentUserId, entry);
-                    if (editForm.ShowDialog() == DialogResult.OK)
+                    item.EditClick += (s, e) =>
                     {
-                        LoadEntriesFromDb();
-                    }
+                        if (_currentSelectedItem != null && _currentSelectedItem != item)
+                            _currentSelectedItem.IsSelected = false;
 
-                    this.Show();
-                };
+                        item.IsSelected = true;
+                        _currentSelectedItem = item;
 
-                item.DeleteClick += (s, e) =>
-                {
-                    DialogResult res = MessageBox.Show(
-                        $"Видалити запис \"{entry.Title}\" у кошик?",
-                        "Підтвердження",
-                        MessageBoxButtons.YesNo,
-                        MessageBoxIcon.Warning);
+                        this.Hide();
+                        EditItemForm editForm = new EditItemForm(currentUserId, entry);
 
-                    if (res == DialogResult.Yes)
-                    {
-                        bool success = DatabaseHelper.MoveToTrash(entry.Id);
-                        if (success)
+                        if (editForm.ShowDialog() == DialogResult.OK)
                         {
+                            _idToSelectAfterRefresh = entry.Id;
+
                             LoadEntriesFromDb();
-                            pnlDetailsArea.Controls.Clear();
                         }
-                    }
-                };
+                        this.Show();
+                    };
+
+                    item.DeleteClick += (s, e) =>
+                    {
+                        if (MessageBox.Show($"Видалити \"{entry.Title}\"?", "Підтвердження", MessageBoxButtons.YesNo) == DialogResult.Yes)
+                        {
+                            if (DatabaseHelper.MoveToTrash(entry.Id)) { LoadEntriesFromDb(); pnlDetailsArea.Controls.Clear(); }
+                        }
+                    };
+                }
 
                 flpPasswordList.Controls.Add(item);
             }
+
+            flpPasswordList.ResumeLayout();
         }
 
         private void ShowDetails(PasswordEntry entry)
         {
             pnlDetailsArea.Controls.Clear();
 
-            var detailsView = new EntryDetailsView(entry, currentUserId);
+            bool isTrash = (currentViewMode == ViewMode.Trash);
+
+            var detailsView = new EntryDetailsView(entry, currentUserId, isTrash);
             detailsView.Dock = DockStyle.Fill;
 
             detailsView.EntryDeleted += (s, e) =>
             {
                 pnlDetailsArea.Controls.Clear();
+
                 LoadEntriesFromDb();
             };
 
             pnlDetailsArea.Controls.Add(detailsView);
         }
-
 
         private void LoadUserData() { lblUsername.Text = DatabaseHelper.GetUsernameById(currentUserId); }
 
@@ -266,8 +324,78 @@ namespace PasswordManager.Forms
             pnlLeft.Paint += pnlLeft_Paint;
             pbCatArrow.Click += (s, e) => ToggleCategories();
 
-            flpPasswordList.Resize += (s, e) => {
-                foreach (Control c in flpPasswordList.Controls) c.Width = flpPasswordList.Width - 25;
+            flpPasswordList.Resize += (s, e) =>
+            {
+                flpPasswordList.SuspendLayout();
+                int newWidth = flpPasswordList.ClientSize.Width - SystemInformation.VerticalScrollBarWidth - 5;
+                foreach (Control c in flpPasswordList.Controls) c.Width = newWidth;
+                flpPasswordList.ResumeLayout();
+            };
+
+            btnProfile.Click += (s, e) =>
+            {
+                this.Hide();
+
+                ProfileForm profile = new ProfileForm(currentUserId);
+                DialogResult result = profile.ShowDialog();
+
+                if (result == DialogResult.Abort)
+                {
+                    LoginForm login = new LoginForm();
+                    login.FormClosed += (sender2, args) => Application.Exit();
+                    login.Show();
+                    this.Hide();
+                }
+                else
+                {
+                    this.Show();
+                }
+            };
+
+            btnAllItems.Click += (s, e) =>
+            {
+                pnlDetailsArea.Controls.Clear();
+                currentViewMode = ViewMode.AllItems;
+                lblHeaderAllItems.Text = "Всі записи";
+
+                currentCategoryFilter = "Всі";
+                dropdownCategory.SelectedText = "Всі категорії";
+
+                btnAddItem.Visible = true;
+                dropdownCategory.Visible = true;
+                lblCategorySubtitle.Visible = false;
+
+                RefreshList();
+            };
+
+            btnFavorites.Click += (s, e) =>
+            {
+                pnlDetailsArea.Controls.Clear();
+                currentViewMode = ViewMode.Favorites;
+                lblHeaderAllItems.Text = "Улюблені записи";
+
+                currentCategoryFilter = "Всі";
+                dropdownCategory.SelectedText = "Всі категорії";
+
+                btnAddItem.Visible = true;
+                dropdownCategory.Visible = true;
+                lblCategorySubtitle.Visible = false;
+
+                RefreshList();
+            };
+
+            btnTrash.Click += (s, e) =>
+            {
+                pnlDetailsArea.Controls.Clear();
+
+                currentViewMode = ViewMode.Trash;
+                lblHeaderAllItems.Text = "Видалені записи";
+                lblCategorySubtitle.Visible = false;
+
+                btnAddItem.Visible = false;
+                dropdownCategory.Visible = false;
+
+                RefreshList();
             };
 
             AttachHoverEffect(btnProfile); AttachHoverEffect(btnAllItems); AttachHoverEffect(btnFavorites);
@@ -291,20 +419,57 @@ namespace PasswordManager.Forms
         {
             flpCategories.Controls.Clear();
             string[] cats = { "Робота", "Розваги", "Соціальні мережі", "Фінанси", "Навчання", "Покупки", "Документи", "Пошта", "Інше" };
+
             foreach (var categoryName in cats)
             {
                 RoundedButton btn = new RoundedButton();
+
                 btn.Text = "   " + categoryName;
+
                 btn.Size = new Size(236, 40);
+
+                btn.TextImageRelation = TextImageRelation.ImageBeforeText;
+                btn.ImageAlign = ContentAlignment.MiddleLeft;
                 btn.TextAlign = ContentAlignment.MiddleLeft;
+
                 btn.Font = new Font("Segoe UI Semibold", 9F);
-                btn.BackColor = Color.Transparent; btn.BackgroundColor = Color.Transparent;
-                btn.BorderColor = Color.Transparent; btn.BorderSize = 0; btn.BorderRadius = 15; btn.IconSize = 30;
+                btn.BackColor = Color.Transparent;
+                btn.BackgroundColor = Color.Transparent;
+                btn.BorderColor = Color.Transparent;
+                btn.BorderSize = 0;
+                btn.BorderRadius = 15;
+                btn.IconSize = 30;
+
+                btn.ForeColor = Color.Black;
+                btn.TextColor = Color.Black;
+
                 string iconFile = GetIconNameForCategory(categoryName);
                 Image catImage = LoadImage(iconFile);
-                if (catImage != null) { btn.Image = catImage; btn.Padding = new Padding(15, 0, 0, 0); }
+
+                if (catImage != null)
+                {
+                    btn.Image = catImage;
+                    btn.Padding = new Padding(15, 0, 0, 0);
+                }
+
                 AttachHoverEffect(btn);
-                btn.Click += (s, e) => { currentCategoryFilter = categoryName; dropdownCategory.SelectedText = categoryName; RefreshList(); };
+
+                btn.Click += (s, e) =>
+                {
+                    pnlDetailsArea.Controls.Clear();
+
+                    currentViewMode = ViewMode.CategoryView;
+                    currentCategoryFilter = categoryName;
+
+                    lblHeaderAllItems.Text = "Всі записи з категорії:";
+                    dropdownCategory.Visible = false;
+
+                    lblCategorySubtitle.Visible = true;
+                    lblCategorySubtitle.Text = $"\"{categoryName}\"";
+
+                    RefreshList();
+                };
+
                 flpCategories.Controls.Add(btn);
             }
         }

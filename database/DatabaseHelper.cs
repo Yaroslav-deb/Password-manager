@@ -323,35 +323,47 @@ namespace PasswordManager.database
                     {
                         while (reader.Read())
                         {
-                            byte[] eUser = reader["encrypted_username"] as byte[];
-                            byte[] ePass = reader["encrypted_password"] as byte[];
-                            byte[] eNotes = reader["encrypted_notes"] as byte[];
-                            byte[] iv = reader["encryption_iv"] as byte[];
-
-                            string decryptedUser = EncryptionHelper.Decrypt(eUser, iv);
-
-                            list.Add(new PasswordEntry
+                            try
                             {
-                                Id = reader.GetInt32(0),
-                                Title = reader.GetString(1),
-                                WebsiteUrl = reader.IsDBNull(2) ? "" : reader.GetString(2),
-                                IconBase64 = reader.IsDBNull(3) ? null : reader.GetString(3),
-                                UpdatedAt = reader.GetDateTime(4),
-                                Category = reader.GetString(5),
-                                Favorite = reader.GetBoolean(6),
-                                Username = decryptedUser,
+                                byte[] eUser = reader["encrypted_username"] as byte[];
+                                byte[] ePass = reader["encrypted_password"] as byte[];
+                                byte[] eNotes = reader["encrypted_notes"] as byte[];
+                                byte[] iv = reader["encryption_iv"] as byte[];
 
-                                EncryptedPassword = ePass,
-                                EncryptionIV = iv,
-                                EncryptedNotes = eNotes
-                            });
+                                string decryptedUser = "Error";
+                                try
+                                {
+                                    decryptedUser = EncryptionHelper.Decrypt(eUser, iv) ?? "No Name";
+                                }
+                                catch { /* */ }
+
+                                list.Add(new PasswordEntry
+                                {
+                                    Id = reader.GetInt32(0),
+                                    Title = reader.GetString(1),
+                                    WebsiteUrl = reader.IsDBNull(2) ? "" : reader.GetString(2),
+                                    IconBase64 = reader.IsDBNull(3) ? null : reader.GetString(3),
+                                    UpdatedAt = reader.GetDateTime(4),
+                                    Category = reader.GetString(5),
+                                    Favorite = reader.GetBoolean(6),
+                                    Username = decryptedUser,
+
+                                    EncryptedPassword = ePass,
+                                    EncryptionIV = iv,
+                                    EncryptedNotes = eNotes
+                                });
+                            }
+                            catch
+                            {
+                                continue;
+                            }
                         }
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show("Помилка завантаження: " + ex.Message);
+                MessageBox.Show("Критична помилка завантаження списку: " + ex.Message);
             }
             return list;
         }
@@ -464,6 +476,192 @@ namespace PasswordManager.database
                 }
             }
             catch { return null; }
+        }
+
+        // --- ОТРИМАННЯ ВИДАЛЕНИХ ЗАПИСІВ ---
+        public static List<PasswordEntry> GetTrashEntries(int userId)
+        {
+            var list = new List<PasswordEntry>();
+            try
+            {
+                using (var conn = GetConnection())
+                {
+                    var cmd = conn.CreateCommand();
+                    // Читаємо з таблиці TRASH
+                    cmd.CommandText = @"
+                        SELECT t.id, t.title, t.website_url, t.icon_base64, t.deleted_at, c.name,
+                               t.encrypted_username, t.encryption_iv, 
+                               t.encrypted_password, t.encrypted_notes
+                        FROM trash t
+                        JOIN categories c ON t.category_id = c.id
+                        WHERE t.user_id = $uid
+                        ORDER BY t.deleted_at DESC";
+
+                    cmd.Parameters.AddWithValue("$uid", userId);
+
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            try
+                            {
+                                byte[] eUser = reader["encrypted_username"] as byte[];
+                                byte[] ePass = reader["encrypted_password"] as byte[];
+                                byte[] eNotes = reader["encrypted_notes"] as byte[];
+                                byte[] iv = reader["encryption_iv"] as byte[];
+
+                                string decryptedUser = EncryptionHelper.Decrypt(eUser, iv) ?? "Error";
+
+                                list.Add(new PasswordEntry
+                                {
+                                    Id = reader.GetInt32(0),
+                                    Title = reader.GetString(1),
+                                    WebsiteUrl = reader.IsDBNull(2) ? "" : reader.GetString(2),
+                                    IconBase64 = reader.IsDBNull(3) ? null : reader.GetString(3),
+                                    // Тут беремо deleted_at
+                                    DeletedAt = reader.GetDateTime(4),
+                                    Category = reader.GetString(5),
+                                    Username = decryptedUser,
+                                    EncryptedPassword = ePass,
+                                    EncryptionIV = iv,
+                                    EncryptedNotes = eNotes,
+                                    Favorite = false // В кошику зірочка не важлива
+                                });
+                            }
+                            catch { continue; }
+                        }
+                    }
+                }
+            }
+            catch { }
+            return list;
+        }
+
+        // --- ВІДНОВЛЕННЯ ЗАПИСУ ---
+        public static bool RestoreEntry(int trashId)
+        {
+            try
+            {
+                using (var conn = GetConnection())
+                {
+                    using (var transaction = conn.BeginTransaction())
+                    {
+                        // 1. Копіюємо з trash назад в entries (ID буде новим, це нормально)
+                        var cmdCopy = conn.CreateCommand();
+                        cmdCopy.Transaction = transaction;
+                        cmdCopy.CommandText = @"
+                            INSERT INTO entries (user_id, category_id, title, website_url, 
+                                                 encrypted_username, encrypted_password, encrypted_notes, 
+                                                 encryption_iv, icon_base64, favorite, created_at, updated_at)
+                            SELECT user_id, category_id, title, website_url, 
+                                   encrypted_username, encrypted_password, encrypted_notes, 
+                                   encryption_iv, icon_base64, favorite, created_at, CURRENT_TIMESTAMP
+                            FROM trash WHERE id = $id";
+                        cmdCopy.Parameters.AddWithValue("$id", trashId);
+                        cmdCopy.ExecuteNonQuery();
+
+                        // 2. Видаляємо з trash
+                        var cmdDel = conn.CreateCommand();
+                        cmdDel.Transaction = transaction;
+                        cmdDel.CommandText = "DELETE FROM trash WHERE id = $id";
+                        cmdDel.Parameters.AddWithValue("$id", trashId);
+                        cmdDel.ExecuteNonQuery();
+
+                        transaction.Commit();
+                        return true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("Помилка відновлення: " + ex.Message);
+                return false;
+            }
+        }
+
+        public static string GetUserEmail(int userId)
+        {
+            using (var conn = GetConnection())
+            {
+                var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT email FROM users WHERE id = $id";
+                cmd.Parameters.AddWithValue("$id", userId);
+                var res = cmd.ExecuteScalar();
+                return res != null ? res.ToString() : "";
+            }
+        }
+
+        public static int GetTotalEntriesCount(int userId)
+        {
+            using (var conn = GetConnection())
+            {
+                var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT COUNT(*) FROM entries WHERE user_id = $id";
+                cmd.Parameters.AddWithValue("$id", userId);
+                return Convert.ToInt32(cmd.ExecuteScalar());
+            }
+        }
+
+        public static bool VerifyPasswordById(int userId, string passwordInput)
+        {
+            using (var conn = GetConnection())
+            {
+                var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT password_hash, kdf_salt FROM users WHERE id = $id";
+                cmd.Parameters.AddWithValue("$id", userId);
+
+                using (var reader = cmd.ExecuteReader())
+                {
+                    if (reader.Read())
+                    {
+                        string storedHash = reader.GetString(0);
+                        byte[] saltBytes = (byte[])reader["kdf_salt"];
+                        string salt = Convert.ToBase64String(saltBytes);
+
+                        string inputHash = GenerateHash(passwordInput, salt);
+                        return storedHash == inputHash;
+                    }
+                }
+            }
+            return false;
+        }
+
+        // --- ДЛЯ ПРОФІЛЮ ---
+        public static string GetLastActivityDate(int userId)
+        {
+            using (var conn = GetConnection())
+            {
+                var cmd = conn.CreateCommand();
+                // Шукаємо максимальну дату серед created_at та updated_at
+                cmd.CommandText = @"
+                    SELECT MAX(MAX(created_at), MAX(updated_at)) 
+                    FROM entries 
+                    WHERE user_id = $id";
+                cmd.Parameters.AddWithValue("$id", userId);
+
+                var res = cmd.ExecuteScalar();
+                if (res != null && DateTime.TryParse(res.ToString(), out DateTime date))
+                {
+                    return date.ToString("dd.MM.yyyy HH:mm");
+                }
+                return "Активності не було";
+            }
+        }
+
+        public static string GetUserRegistrationDate(int userId)
+        {
+            using (var conn = GetConnection())
+            {
+                var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT created_at FROM users WHERE id = $id";
+                cmd.Parameters.AddWithValue("$id", userId);
+                var res = cmd.ExecuteScalar();
+                if (res != null && DateTime.TryParse(res.ToString(), out DateTime date))
+                {
+                    return date.ToShortDateString();
+                }
+                return "Невідомо";
+            }
         }
 
         // --- ІНІЦІАЛІЗАЦІЯ БД ---

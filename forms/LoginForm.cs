@@ -113,8 +113,6 @@ namespace PasswordManager.Forms
 
             if (userId != -1)
             {
-                MessageBox.Show($"Â³òàºìî! Âàø ID: {userId}", "Óñï³õ", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
                 MainForm main = new MainForm(userId);
 
                 main.FormClosed += (s, args) => Application.Exit();

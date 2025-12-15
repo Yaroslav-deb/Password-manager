@@ -102,7 +102,6 @@ namespace PasswordManager.personalizedTools
             {
                 lblTitle.ForeColor = colorTextSelected;
                 lblSubtitle.ForeColor = colorTextSelected;
-                // Показуємо кнопки тільки коли активно
                 pbEdit.Visible = true;
                 pbDelete.Visible = true;
             }
@@ -110,11 +109,10 @@ namespace PasswordManager.personalizedTools
             {
                 lblTitle.ForeColor = colorTextTitleNormal;
                 lblSubtitle.ForeColor = colorTextSubNormal;
-                // Ховаємо кнопки
                 pbEdit.Visible = false;
                 pbDelete.Visible = false;
             }
-            Invalidate(); // Перемалювати фон
+            Invalidate();
         }
 
         private void AttachMouseEvents(Control c)

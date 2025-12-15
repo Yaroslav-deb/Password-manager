@@ -17,6 +17,7 @@ namespace PasswordManager.personalizedTools
         private string photosPath;
         private int historyState = 0;
         private int currentUserId;
+        private bool isTrashMode = false;
 
         public event EventHandler EntryDeleted;
 
@@ -24,11 +25,13 @@ namespace PasswordManager.personalizedTools
         private int boxHeight = 160;
         private int boxMarginX = 30;
 
-        public EntryDetailsView(PasswordEntry entry, int userId)
+        public EntryDetailsView(PasswordEntry entry, int userId, bool isTrash = false)
         {
-            InitializeComponent();
             this.currentUserId = userId;
             this._entry = entry;
+            this.isTrashMode = isTrash;
+
+            InitializeComponent();
 
             this.SetStyle(ControlStyles.UserPaint | ControlStyles.AllPaintingInWmPaint | ControlStyles.OptimizedDoubleBuffer | ControlStyles.ResizeRedraw, true);
 
@@ -38,10 +41,45 @@ namespace PasswordManager.personalizedTools
             LoadIcons();
             PopulateData();
             SetupEvents();
+            SetupTrashMode();
 
             pnlSecurity.Paint += PnlSecurity_Paint;
             AdjustLayout();
             this.Resize += (s, e) => AdjustLayout();
+            this.isTrashMode = isTrashMode;
+        }
+
+        private void SetupTrashMode()
+        {
+            if (isTrashMode)
+            {
+                btnEdit.Visible = false;
+                btnDelete.Visible = false;
+                pbFavorite.Visible = false;
+                pnlSecurity.Visible = false;
+
+                btnRestore.Visible = true;
+                btnRestore.Location = btnEdit.Location;
+
+                Image restoreImg = LoadImage("restore.png");
+                if (restoreImg != null)
+                {
+                    btnRestore.Image = restoreImg;
+                    btnRestore.Padding = new Padding(15, 0, 0, 0);
+                }
+
+                lblHistoryTitle.Text = "Видалено";
+                if (_entry.DeletedAt.HasValue)
+                    lblHistoryDate.Text = _entry.DeletedAt.Value.ToShortDateString();
+            }
+            else
+            {
+                btnRestore.Visible = false;
+                btnEdit.Visible = true;
+                btnDelete.Visible = true;
+                pbFavorite.Visible = true;
+                pnlSecurity.Visible = true;
+            }
         }
 
         private void PopulateData()
@@ -207,13 +245,21 @@ namespace PasswordManager.personalizedTools
                     if (DatabaseHelper.MoveToTrash(_entry.Id)) EntryDeleted?.Invoke(this, EventArgs.Empty);
                 }
             };
+
+            btnRestore.Click += (s, e) =>
+            {
+                if (DatabaseHelper.RestoreEntry(_entry.Id))
+                {
+                    EntryDeleted?.Invoke(this, EventArgs.Empty);
+                }
+            };
         }
 
         private void SetupHistorySection()
         {
             historyState = 3; pbHistoryArrow.Image = null; lblHistoryTitle.Text = "Створено"; lblHistoryDate.Text = _entry.UpdatedAt.ToShortDateString();
         }
-        private void ToggleHistory() { /* Заглушка */ }
+        private void ToggleHistory() { }
 
         private void UpdatePasswordText() { if (isPasswordVisible) lblPassValue.Text = lblPassValue.Tag.ToString(); else lblPassValue.Text = "••••••••••"; }
         private Image LoadImage(string name) { string path = Path.Combine(photosPath, name); return File.Exists(path) ? Image.FromFile(path) : null; }

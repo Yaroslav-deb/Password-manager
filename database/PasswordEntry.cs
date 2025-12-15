@@ -15,5 +15,6 @@ namespace PasswordManager.database
         public byte[] EncryptedPassword { get; set; }
         public byte[] EncryptionIV { get; set; }
         public byte[] EncryptedNotes { get; set; }
+        public DateTime? DeletedAt { get; set; }
     }
 }

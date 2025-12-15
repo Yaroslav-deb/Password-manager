@@ -218,7 +218,6 @@ namespace PasswordManager.Forms
 
             if (success)
             {
-                MessageBox.Show("Зміни збережено!", "Успіх", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 this.DialogResult = DialogResult.OK;
                 this.Close();
             }

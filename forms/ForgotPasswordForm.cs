@@ -54,8 +54,6 @@ namespace PasswordManager.Forms
 
             if (isSent)
             {
-                MessageBox.Show($"Код успішно відправлено на {email}", "Успіх", MessageBoxButtons.OK, MessageBoxIcon.Information);
-
                 VerificationForm verifyForm = new VerificationForm(email, code);
                 verifyForm.FormClosed += (s, args) => Application.Exit();
                 this.Hide();
